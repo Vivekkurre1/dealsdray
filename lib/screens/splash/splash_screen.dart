@@ -23,8 +23,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   void _handleNavigation() async {
     final prefs = await SharedPreferences.getInstance();
-    final authStep = prefs.getString('auth_step');
-    if (authStep == AuthStep.registered.name) {
+    // final authStep = prefs.getString('auth_step');
+    final validatedReferralCode = prefs.getString('validatedReferralCode');
+    // if (authStep == AuthStep.registered.name) {
+    if (validatedReferralCode == AuthStep.validatedReferralCode.name) {
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
       }

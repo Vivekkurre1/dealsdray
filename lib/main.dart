@@ -1,3 +1,4 @@
+// import 'package:dealsdray/screens/referral/referral_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/splash/splash_screen.dart';
@@ -29,6 +30,7 @@ class DealsDrayApp extends StatelessWidget {
         '/otp': (context) => OtpVerificationScreen(),
         '/register': (context) => RegistrationScreen(),
         '/home': (context) => HomeScreen(),
+        // '/referral': (context) => ReferralScreen(),
       },
     );
   }

@@ -10,6 +10,7 @@ enum AuthStep {
   deviceRegistered,
   otpSent,
   otpVerified,
+  validatedReferralCode,
   registered,
   error,
 }
@@ -155,10 +156,53 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> registerEmail({
+  Future<void> register({
     required String email,
     required String password,
     required String referralCode,
+  }) async {
+    await registerEmail(email: email, password: password);
+
+    if (state.step != AuthStep.registered) {
+      return;
+    } else if (state.step == AuthStep.registered) {
+      await validateReferralCode(referralCode);
+    }
+  }
+
+  Future<void> validateReferralCode(String code) async {
+    state = state.copyWith(step: AuthStep.loading, error: null);
+    try {
+      final response = await apiService.validateReferralCode(
+        code,
+        state.userId!,
+      );
+      final m = jsonDecode(response.body);
+      if (m['status'] == 1) {
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.setString(
+            'validatedReferralCode',
+            AuthStep.validatedReferralCode.name,
+          );
+        });
+        state = state.copyWith(
+          step: AuthStep.validatedReferralCode,
+          error: null,
+        );
+      } else {
+        state = state.copyWith(
+          step: AuthStep.error,
+          error: m['message'] ?? "Referral code is invalid",
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(step: AuthStep.error, error: e.toString());
+    }
+  }
+
+  Future<void> registerEmail({
+    required String email,
+    required String password,
   }) async {
     if (state.userId == null) {
       state = state.copyWith(step: AuthStep.error, error: 'User ID missing');
@@ -169,14 +213,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await apiService.registerEmail(
         email: email,
         password: password,
-        referralCode: referralCode,
         userId: state.userId!,
       );
       if (response.statusCode == 200) {
         //set shared preferences
-        SharedPreferences.getInstance().then((prefs) {
-          prefs.setString('auth_step', AuthStep.registered.name);
-        });
+        // SharedPreferences.getInstance().then((prefs) {
+        //   prefs.setString('auth_step', AuthStep.registered.name);
+        // });
         state = state.copyWith(step: AuthStep.registered, error: null);
       } else {
         state = state.copyWith(step: AuthStep.error, error: response.body);

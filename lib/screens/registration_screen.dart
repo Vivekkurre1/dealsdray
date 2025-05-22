@@ -14,12 +14,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
   bool _obscurePassword = true;
+  String? _localError;
 
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     ref.listen<AuthState>(authProvider, (prev, next) {
-      if (next.step == AuthStep.registered) {
+      if (next.step == AuthStep.validatedReferralCode) {
         Navigator.of(context).pushReplacementNamed('/home');
       }
     });
@@ -113,7 +114,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 controller: _referralController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Referral Code (Optional)',
+                  labelText: 'Referral Code',
                   labelStyle: TextStyle(color: Colors.grey[600]),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey[300]!),
@@ -123,6 +124,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   ),
                 ),
               ),
+              SizedBox(height: 8),
+              if (_localError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _localError!,
+                    style: TextStyle(color: Colors.red, fontSize: 15),
+                  ),
+                ),
               SizedBox(height: 34),
               if (auth.step == AuthStep.loading)
                 Center(
@@ -142,17 +152,46 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          setState(() {
+            _localError = null;
+          });
           final email = _emailController.text.trim();
           final password = _passwordController.text.trim();
           final referral = _referralController.text.trim();
-          if (email.isNotEmpty && password.isNotEmpty) {
+          if (referral.isEmpty) {
+            setState(() {
+              _localError = "Referral code is mandatory";
+            });
+            return;
+          } else if (email.isEmpty) {
+            setState(() {
+              _localError = "Email is empty";
+            });
+            return;
+          } else if (password.isEmpty) {
+            setState(() {
+              _localError = "Password is empty";
+            });
+            return;
+          }
+
+          if (email.isNotEmpty && password.isNotEmpty && referral.isNotEmpty) {
             ref
                 .read(authProvider.notifier)
-                .registerEmail(
+                .register(
                   email: email,
                   password: password,
                   referralCode: referral,
                 );
+            // ref
+            //     .read(authProvider.notifier)
+            //     .registerEmail(
+            //       email: email,
+            //       password: password,
+            //       // referralCode: referral,
+            //     );
+
+            // ref.read(authProvider.notifier).validateReferralCode(referral);
           }
         },
         backgroundColor: Color(0xffb12929),

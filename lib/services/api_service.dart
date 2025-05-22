@@ -39,11 +39,22 @@ class ApiService {
     );
   }
 
+  //Validate Referral Code
+  Future<http.Response> validateReferralCode(String code, String userId) async {
+    return await http.post(
+      Uri.parse(
+        "http://autoapiv4.dealsdray.com/api/v2/app/validate-referral-id",
+      ),
+      headers: _headers,
+      body: jsonEncode({'userId': userId, 'referralId': code}),
+    );
+  }
+
   /// dummy Register email with referral code
   Future<http.Response> registerEmail({
     required String email,
     required String password,
-    required String referralCode,
+    // required String referralCode,
     required String userId,
   }) async {
     final response = http.Response(
@@ -52,7 +63,7 @@ class ApiService {
         'data': {
           'email': email,
           'password': password,
-          'referralCode': referralCode,
+          // 'referralCode': referralCode,
           'userId': userId,
         },
       }),
